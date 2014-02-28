@@ -1,0 +1,9 @@
+packages/
+PhoneApp1/bin/
+PhoneApp1/Bin/
+PhoneApp1/obj/
+*.user
+*.suo
+Thumbs.db
+Desktop.ini
+*.bak
