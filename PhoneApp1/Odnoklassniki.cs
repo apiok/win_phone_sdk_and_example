@@ -47,7 +47,7 @@ namespace Odnoklassniki
         private string access_token;
         private string refresh_token;
         private string code;
-        private ConcurrentDictionary<HttpWebRequest, CallbackStruct> callbacks = new ConcurrentDictionary<HttpWebRequest, CallbackStruct>();
+        private readonly ConcurrentDictionary<HttpWebRequest, CallbackStruct> callbacks = new ConcurrentDictionary<HttpWebRequest, CallbackStruct>();
         private AuthCallbackStruct authCallback, updateCallback;
 
         private enum OAuthRequestType : byte { OAuthTypeAuth, OAuthTypeUpdateToken };
@@ -76,7 +76,7 @@ namespace Odnoklassniki
             this.authCallback.callbackContext = callbackContext;
             this.authCallback.saveSession = saveSession;
             Uri uri = new Uri(String.Format(URI_TEMPLATE_AUTH, this.app_id, this.permissions, this.redirect_url), UriKind.Absolute);
-            browser.Navigated += new EventHandler<NavigationEventArgs>(NavigateHandler);
+            browser.Navigated += NavigateHandler;
             browser.Navigate(uri);
         }
 
@@ -93,15 +93,7 @@ namespace Odnoklassniki
         {
             try
             {
-                Dictionary<string, string> parametersLocal;
-                if (parameters == null)
-                {
-                    parametersLocal = new Dictionary<string, string>();
-                }
-                else
-                {
-                    parametersLocal = new Dictionary<string, string>(parameters);
-                }
+                Dictionary<string, string> parametersLocal = parameters == null ? new Dictionary<string, string>() : new Dictionary<string, string>(parameters);
                 StringBuilder builder = new StringBuilder(URI_API_REQUEST).Append("?");
                 parametersLocal.Add("sig", this.CalcSignature(method, parameters));
                 parametersLocal.Add("application_key", this.app_public_key);
@@ -240,7 +232,7 @@ namespace Odnoklassniki
                 HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(myUri);
                 request.Method = "POST";
                 request.ContentType = "application/x-www-form-urlencoded";
-                request.BeginGetRequestStream(new AsyncCallback((arg) => { BeginGetOAuthResponse(arg, type); }), request);
+                request.BeginGetRequestStream((arg) => BeginGetOAuthResponse(arg, type), request);
 
             }
             catch (Exception e)
@@ -270,7 +262,7 @@ namespace Odnoklassniki
                 postStream.Write(byteArray, 0, byteArray.Length);
                 postStream.Close();
 
-                request.BeginGetResponse(new AsyncCallback((arg) => { ProcessOAuthResponse(arg, type); }), request);
+                request.BeginGetResponse((arg) => ProcessOAuthResponse(arg, type), request);
             }
             catch (Exception e)
             {
@@ -320,10 +312,7 @@ namespace Odnoklassniki
                         }
                         if (callbackStruct.callbackContext != null && callbackStruct.onSuccess != null)
                         {
-                            callbackStruct.callbackContext.Dispatcher.BeginInvoke(() =>
-                            {
-                                callbackStruct.onSuccess.Invoke();
-                            });
+                            callbackStruct.callbackContext.Dispatcher.BeginInvoke(() => callbackStruct.onSuccess.Invoke());
                         }
                     }
                     else
@@ -342,17 +331,11 @@ namespace Odnoklassniki
         {
             if (type == OAuthRequestType.OAuthTypeAuth && authCallback.onError != null && authCallback.callbackContext != null)
             {
-                authCallback.callbackContext.Dispatcher.BeginInvoke(() =>
-                {
-                    authCallback.onError.Invoke(e);
-                });
+                authCallback.callbackContext.Dispatcher.BeginInvoke(() => authCallback.onError.Invoke(e));
             }
             else if (type == OAuthRequestType.OAuthTypeUpdateToken && updateCallback.onError != null)
             {
-                updateCallback.callbackContext.Dispatcher.BeginInvoke(() =>
-                {
-                    updateCallback.onError.Invoke(e);
-                });
+                updateCallback.callbackContext.Dispatcher.BeginInvoke(() => updateCallback.onError.Invoke(e));
             }
         }
 
@@ -389,10 +372,7 @@ namespace Odnoklassniki
                 }
                 if (callback.callbackContext != null && callback.onSuccess != null)
                 {
-                    callback.callbackContext.Dispatcher.BeginInvoke(() =>
-                    {
-                        callback.onSuccess.Invoke(resultText);
-                    });
+                    callback.callbackContext.Dispatcher.BeginInvoke(() => callback.onSuccess.Invoke(resultText));
                 }    
             }
             catch (WebException e)
@@ -430,15 +410,7 @@ namespace Odnoklassniki
          */
         private string CalcSignature(string method, Dictionary<string, string> parameters)
         {
-            Dictionary<string, string> parametersLocal;
-            if (parameters == null)
-            {
-                parametersLocal = new Dictionary<string, string>();
-            }
-            else
-            {
-                parametersLocal = new Dictionary<string, string>(parameters);
-            }
+            Dictionary<string, string> parametersLocal = parameters == null ? new Dictionary<string, string>() : new Dictionary<string, string>(parameters);
 
             parametersLocal.Add("application_key", this.app_public_key);
             parametersLocal.Add("method", method);
@@ -461,7 +433,7 @@ namespace Odnoklassniki
             try
             {
                 WebClient wc = new WebClient();
-                wc.OpenReadCompleted += new OpenReadCompletedEventHandler((s, e) =>
+                wc.OpenReadCompleted += (s, e) =>
                 {
                     if (e.Error == null && !e.Cancelled)
                     {
@@ -469,10 +441,7 @@ namespace Odnoklassniki
                         {
                             BitmapImage image = new BitmapImage();
                             image.SetSource(e.Result);
-                            context.Dispatcher.BeginInvoke(() =>
-                            {
-                                callbackOnSuccess.Invoke(image);
-                            });
+                            context.Dispatcher.BeginInvoke(() => callbackOnSuccess.Invoke(image));
                         }
                         catch (Exception ex)
                         {
@@ -486,7 +455,7 @@ namespace Odnoklassniki
                     {
                         System.Diagnostics.Debug.WriteLine("Error downloading image");
                     }
-                });
+                };
                 wc.OpenReadAsync(imageAbsoluteUri, wc);
             }
             catch (Exception e)
