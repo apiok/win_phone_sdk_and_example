@@ -209,14 +209,14 @@ namespace Odnoklassniki
             {
                 const string codeIs = "code=", errorIs = "error=";
                 string query = e.Uri.Query;
-                if (query.IndexOf(codeIs) != -1)
+                if (query.IndexOf(codeIs, System.StringComparison.OrdinalIgnoreCase) != -1)
                 {
-                    this._code = query.Substring(query.IndexOf(codeIs) + codeIs.Length);
+                    this._code = query.Substring(query.IndexOf(codeIs, System.StringComparison.OrdinalIgnoreCase) + codeIs.Length);
                     this.BeginOAuthRequest(SDK.OAuthRequestType.OAuthTypeAuth);
                 }
-                else if (query.IndexOf(errorIs) != -1)
+                else if (query.IndexOf(errorIs, System.StringComparison.OrdinalIgnoreCase) != -1)
                 {
-                    throw new Exception(query.Substring(query.IndexOf(errorIs) + errorIs.Length));
+                    throw new Exception(query.Substring(query.IndexOf(errorIs, System.StringComparison.OrdinalIgnoreCase) + errorIs.Length));
                 }
             }
             catch (Exception ex)
@@ -280,7 +280,7 @@ namespace Odnoklassniki
                 using (StreamReader httpWebStreamReader = new StreamReader(response.GetResponseStream()))
                 {
                     string result = httpWebStreamReader.ReadToEnd();
-                    int tokenPosition = result.IndexOf(ParameterNameAccessToken);
+                    int tokenPosition = result.IndexOf(ParameterNameAccessToken, System.StringComparison.OrdinalIgnoreCase);
                     if(tokenPosition != 0)
                     {
                         const string tokenNameValueSeparator = "\":\"";
@@ -297,7 +297,7 @@ namespace Odnoklassniki
                         if (type == SDK.OAuthRequestType.OAuthTypeAuth)
                         {
                             builder.Clear();
-                            tokenPosition = result.IndexOf(SDK.ParameterNameRefreshToken) + SDK.ParameterNameRefreshToken.Length + tokenNameValueSeparator.Length;
+                            tokenPosition = result.IndexOf(SDK.ParameterNameRefreshToken, System.StringComparison.OrdinalIgnoreCase) + SDK.ParameterNameRefreshToken.Length + tokenNameValueSeparator.Length;
                             while (tokenPosition < result.Length && !result[tokenPosition].Equals(tokenStopSymbol))
                             {
                                 builder.Append(result[tokenPosition]);
@@ -357,7 +357,7 @@ namespace Odnoklassniki
                 string resultText = GetUtf8TextFromWebResponse(response);
                 CallbackStruct callback = this._callbacks.SafeGet(request);
                 this._callbacks.SafeRemove(request);
-                if (resultText.IndexOf(SDK.ResponsePartErrorCode + ":" + SDK.ErrorCodeSessionExpired) != -1)
+                if (resultText.IndexOf(SDK.ResponsePartErrorCode + ":" + SDK.ErrorCodeSessionExpired, System.StringComparison.OrdinalIgnoreCase) != -1)
                 {
                     if (callback.OnError != null)
                     {
@@ -365,7 +365,7 @@ namespace Odnoklassniki
                         return;
                     }
                 }
-                else if (resultText.IndexOf(SDK.ResponsePartErrorCode) != -1)
+                else if (resultText.IndexOf(SDK.ResponsePartErrorCode, System.StringComparison.OrdinalIgnoreCase) != -1)
                 {
                     if (callback.OnError != null)
                     {
