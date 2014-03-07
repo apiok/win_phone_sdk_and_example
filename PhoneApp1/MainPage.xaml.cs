@@ -4,101 +4,90 @@ using Microsoft.Phone.Controls;
 using Newtonsoft.Json.Linq;
 using Odnoklassniki;
 
+// ReSharper disable RedundantThisQualifier
+
 namespace PhoneApp1
 {
+// Only classes inherited from PhoneApplicationPage can be passed as callbackContext to SDK, because yhey have Dispatcher
+// ReSharper disable RedundantExtendsListEntry
     public partial class MainPage : PhoneApplicationPage
+// ReSharper restore RedundantExtendsListEntry
     {
-        private const string app_id = "";
-        private const string app_public_key = "";
-        private const string app_secret_key = "";
-        private const string redirect_url = "";
-        private const string permissions = "VALUABLE_ACCESS";
-        private SDK sdk;
+        private const string AppId = "";
+        private const string AppPublicKey = "";
+        private const string AppSecretKey = "";
+        private const string RedirectUrl = "";
+        private const string Permissions = "VALUABLE_ACCESS";
+        private readonly SDK _sdk;
 
-        // Конструктор
         public MainPage()
         {
-            InitializeComponent();
-            sdk = new SDK(app_id, app_public_key, app_secret_key, redirect_url, permissions);
-
-            // Пример кода для локализации ApplicationBar
-            //BuildLocalizedApplicationBar();
+            this.InitializeComponent();
+            this._sdk = new SDK(AppId, AppPublicKey, AppSecretKey, RedirectUrl, Permissions);
         }
 
+        // tries to login with existing session if it exists and initiates authorization if not
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            if (this.sdk.TryLoadSession() == false)
+            if (this._sdk.TryLoadSession() == false)
             {
-                browser.Visibility = System.Windows.Visibility.Visible;
-                this.sdk.Authorize(browser, this, authCallback, errorCallback);
+                this.Browser.Visibility = Visibility.Visible;
+                this._sdk.Authorize(Browser, this, AuthCallback, ErrorCallback);
                 
             }
             else
             {
-                authCallback();
+                this.AuthCallback();
             }
         }
 
-        private void authCallback()
+        // uses users.getCurrentUser to get info about authorized user: first name, last name, location and photo 128*128 url
+        private void AuthCallback()
         {
-            browser.Visibility = System.Windows.Visibility.Collapsed;
-            System.Collections.Generic.Dictionary<string, string> parameters = new System.Collections.Generic.Dictionary<string, string>();
-            parameters.Add("fields","first_name,last_name,location,pic_5");
-            this.sdk.SendRequest("users.getCurrentUser", parameters, this, getCurrentUserCallback, errorCallback);
+            this.Browser.Visibility = Visibility.Collapsed;
+            System.Collections.Generic.Dictionary<string, string> parameters = new System.Collections.Generic.Dictionary<string, string>
+            {
+                {"fields", "first_name,last_name,location,pic_5"}
+            };
+            this._sdk.SendRequest("users.getCurrentUser", parameters, this, GetCurrentUserCallback, ErrorCallback);
         }
 
-        void getCurrentUserCallback(string result)
+        // downloads and sets user photo and one friend's name
+        void GetCurrentUserCallback(string result)
         {
             JObject resObject = JObject.Parse(result);
-            nameField.Text = (string)resObject["first_name"];
-            surnameField.Text = (string)resObject["last_name"];
-            Utils.downloadImageAsync(new Uri((string)resObject["pic_5"]), this, (i) =>
+            this.NameField.Text = (string)resObject["first_name"];
+            this.SurnameField.Text = (string)resObject["last_name"];
+            Utils.downloadImageAsync(new Uri((string)resObject["pic_5"]), this, i =>
             {
-                userPhotoImage.Source = i;
-            }, errorCallback);
-            this.sdk.SendRequest("friends.get", null, this, (friendsList) =>
+                this.UserPhotoImage.Source = i;
+            }, ErrorCallback);
+            this._sdk.SendRequest("friends.get", null, this, friendsList =>
             {
                 JArray friendsArray = JArray.Parse(friendsList);
-                //System.Diagnostics.Debug.WriteLine(friendsArray[0]);
-                System.Collections.Generic.Dictionary<string, string> parameters = new System.Collections.Generic.Dictionary<string, string>();
-                parameters.Add("uids", friendsArray[0].ToString());
-                parameters.Add("fields", "first_name,last_name");
-                this.sdk.SendRequest("users.getInfo", parameters, this, (randomFriend) =>
+                System.Collections.Generic.Dictionary<string, string> parameters = new System.Collections.Generic.Dictionary<string, string>
+                {
+                    {"uids", friendsArray[0].ToString()},
+                    {"fields", "first_name,last_name"}
+                };
+                this._sdk.SendRequest("users.getInfo", parameters, this, randomFriend =>
                 {
                     JArray randomFriendObj = JArray.Parse(randomFriend);
-                    randomFriendNameLabel.Text = randomFriendObj[0]["first_name"].ToString() + " " + randomFriendObj[0]["last_name"].ToString();
-                    randomFriendLabel.Visibility = System.Windows.Visibility.Visible;
-                    randomFriendNameLabel.Visibility = System.Windows.Visibility.Visible;
-                }, errorCallback);
-            }, errorCallback);
+                    this.RandomFriendNameLabel.Text = randomFriendObj[0]["first_name"].ToString() + " " + randomFriendObj[0]["last_name"].ToString();
+                    this.RandomFriendLabel.Visibility = Visibility.Visible;
+                    this.RandomFriendNameLabel.Visibility = Visibility.Visible;
+                }, ErrorCallback);
+            }, ErrorCallback);
 
         }
 
-        private void errorCallback(Exception e)
+        // prints debug error message to stdout
+        private void ErrorCallback(Exception e)
         {
-            System.Diagnostics.Debug.WriteLine("Exception: " + e.ToString());
-            if (e.Message == Odnoklassniki.SDK.ERROR_SESSION_EXPIRED)
-            {
-                System.Diagnostics.Debug.WriteLine("Session expired error caught. Trying to update session.");
-                this.sdk.UpdateToken(this, authCallback, null);
-            }
+            System.Diagnostics.Debug.WriteLine("Exception: " + e);
+            if (e.Message != SDK.ERROR_SESSION_EXPIRED) return;
+            System.Diagnostics.Debug.WriteLine("Session expired error caught. Trying to update session.");
+            this._sdk.UpdateToken(this, AuthCallback, null);
         }
-
-
-        // Пример кода для построения локализованной панели ApplicationBar
-        //private void BuildLocalizedApplicationBar()
-        //{
-        //    // Установка в качестве ApplicationBar страницы нового экземпляра ApplicationBar.
-        //    ApplicationBar = new ApplicationBar();
-
-        //    // Создание новой кнопки и установка текстового значения равным локализованной строке из AppResources.
-        //    ApplicationBarIconButton appBarButton = new ApplicationBarIconButton(new Uri("/Assets/AppBar/appbar.add.rest.png", UriKind.Relative));
-        //    appBarButton.Text = AppResources.AppBarButtonText;
-        //    ApplicationBar.Buttons.Add(appBarButton);
-
-        //    // Создание нового пункта меню с локализованной строкой из AppResources.
-        //    ApplicationBarMenuItem appBarMenuItem = new ApplicationBarMenuItem(AppResources.AppBarMenuItemText);
-        //    ApplicationBar.MenuItems.Add(appBarMenuItem);
-        //}
     }
 }

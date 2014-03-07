@@ -54,13 +54,13 @@
             <TextBlock HorizontalAlignment="Left" Margin="190,41,0,0" TextWrapping="Wrap" Text="Имя" VerticalAlignment="Top" RenderTransformOrigin="2.615,0.296"/>
             <TextBlock HorizontalAlignment="Left" Margin="190,70,0,0" TextWrapping="Wrap" Text="Фамилия" VerticalAlignment="Top"/>
 
-            <TextBlock HorizontalAlignment="Left" Margin="300,41,0,0" TextWrapping="Wrap" Text="Неизвестно" VerticalAlignment="Top" Name="nameField" />
-            <TextBlock HorizontalAlignment="Left" Margin="300,70,0,0" TextWrapping="Wrap" Text="Неизвестно" VerticalAlignment="Top" Name="surnameField" />
-            <Image HorizontalAlignment="Left" Height="128" Margin="11,11,0,0" VerticalAlignment="Top" Width="128" Name="userPhotoImage" Source="/Assets/q.png"/>
+            <TextBlock HorizontalAlignment="Left" Margin="300,41,0,0" TextWrapping="Wrap" Text="Неизвестно" VerticalAlignment="Top" Name="NameField" />
+            <TextBlock HorizontalAlignment="Left" Margin="300,70,0,0" TextWrapping="Wrap" Text="Неизвестно" VerticalAlignment="Top" Name="SurnameField" />
+            <Image HorizontalAlignment="Left" Height="128" Margin="11,11,0,0" VerticalAlignment="Top" Width="128" Name="UserPhotoImage" Source="/Assets/q.png"/>
             <Button Content="Login" HorizontalAlignment="Left" Margin="160,149,0,0" VerticalAlignment="Top" Click="Button_Click"/>
-            <phone:WebBrowser HorizontalAlignment="Left" Margin="0,226,0,0" VerticalAlignment="Top" Height="332" Width="446" Name="browser" Visibility="Collapsed"/>
-            <TextBlock HorizontalAlignment="Left" Margin="20,220,0,0" TextWrapping="Wrap" Text="Случайный друг:" VerticalAlignment="Top" Name="randomFriendLabel" Visibility="Collapsed"/>
-            <TextBlock HorizontalAlignment="Left" Margin="190,220,0,0" TextWrapping="Wrap" Text="Неизвестно" VerticalAlignment="Top" Name="randomFriendNameLabel" Visibility="Collapsed"/>
+            <phone:WebBrowser HorizontalAlignment="Left" Margin="0,226,0,0" VerticalAlignment="Top" Height="332" Width="446" Name="Browser" Visibility="Collapsed"/>
+            <TextBlock HorizontalAlignment="Left" Margin="20,220,0,0" TextWrapping="Wrap" Text="Случайный друг:" VerticalAlignment="Top" Name="RandomFriendLabel" Visibility="Collapsed"/>
+            <TextBlock HorizontalAlignment="Left" Margin="190,220,0,0" TextWrapping="Wrap" Text="Неизвестно" VerticalAlignment="Top" Name="RandomFriendNameLabel" Visibility="Collapsed"/>
         </Grid>
 
         <!--Раскомментируйте, чтобы увидеть сетку выравнивания и выровнять
