@@ -8,10 +8,10 @@ using Odnoklassniki;
 
 namespace PhoneApp1
 {
-// Only classes inherited from PhoneApplicationPage can be passed as callbackContext to SDK, because yhey have Dispatcher
-// ReSharper disable RedundantExtendsListEntry
+    // Only classes inherited from PhoneApplicationPage can be passed as callbackContext to SDK, because yhey have Dispatcher
+    // ReSharper disable RedundantExtendsListEntry
     public partial class MainPage : PhoneApplicationPage
-// ReSharper restore RedundantExtendsListEntry
+    // ReSharper restore RedundantExtendsListEntry
     {
         private const string AppId = "";
         private const string AppPublicKey = "";
@@ -58,7 +58,7 @@ namespace PhoneApp1
             JObject resObject = JObject.Parse(result);
             this.NameField.Text = (string)resObject["first_name"];
             this.SurnameField.Text = (string)resObject["last_name"];
-            Utils.downloadImageAsync(new Uri((string)resObject["pic_5"]), this, i =>
+            Utils.DownloadImageAsync(new Uri((string)resObject["pic_5"]), this, i =>
             {
                 this.UserPhotoImage.Source = i;
             }, ErrorCallback);
@@ -85,7 +85,7 @@ namespace PhoneApp1
         private void ErrorCallback(Exception e)
         {
             System.Diagnostics.Debug.WriteLine("Exception: " + e);
-            if (e.Message != SDK.ERROR_SESSION_EXPIRED) return;
+            if (e.Message != SDK.ErrorSessionExpired) return;
             System.Diagnostics.Debug.WriteLine("Session expired error caught. Trying to update session.");
             this._sdk.UpdateToken(this, AuthCallback, null);
         }
