@@ -11,8 +11,6 @@ using Odnoklassniki.ServiceStructures;
 using System.ComponentModel;
 using System.Linq;
 
-// ReSharper disable RedundantThisQualifier
-
 // ReSharper disable once CheckNamespace
 namespace Odnoklassniki
 {
@@ -43,6 +41,8 @@ namespace Odnoklassniki
         private const string SdkException = "Odnoklassniki sdk exception. Please, check your app info, request correctness and internet connection. If problem persists, contact SDK developers with error and your actions description.";
         private const string ParameterNameAccessToken = "access_token";
         private const string ParameterNameRefreshToken = "refresh_token";
+        private const string ResponsePartErrorCode = "\"error_code\"";
+        private const int ErrorCodeSessionExpired = 102;
         private readonly string _appId;
         private readonly string _appPublicKey;
         private readonly string _appSecretKey;
@@ -207,15 +207,16 @@ namespace Odnoklassniki
         {
             try
             {
+                const string codeIs = "code=", errorIs = "error=";
                 string query = e.Uri.Query;
-                if (query.IndexOf("code=") != -1)
+                if (query.IndexOf(codeIs) != -1)
                 {
-                    this._code = query.Substring(query.IndexOf("code=") + 5);
+                    this._code = query.Substring(query.IndexOf(codeIs) + codeIs.Length);
                     this.BeginOAuthRequest(SDK.OAuthRequestType.OAuthTypeAuth);
                 }
-                else if (query.IndexOf("error=") != -1)
+                else if (query.IndexOf(errorIs) != -1)
                 {
-                    throw new Exception(query.Substring(query.IndexOf("error=") + 6));
+                    throw new Exception(query.Substring(query.IndexOf(errorIs) + errorIs.Length));
                 }
             }
             catch (Exception ex)
@@ -282,10 +283,11 @@ namespace Odnoklassniki
                     int tokenPosition = result.IndexOf(ParameterNameAccessToken);
                     if(tokenPosition != 0)
                     {
+                        const string tokenNameValueSeparator = "\":\"";
+                        const char tokenStopSymbol = '\"';
                         StringBuilder builder = new StringBuilder();
-                        //plus length of (access_token":")
-                        tokenPosition += 15;
-                        while (tokenPosition < result.Length && !result[tokenPosition].Equals( '\"'))
+                        tokenPosition += SDK.ParameterNameAccessToken.Length + tokenNameValueSeparator.Length;
+                        while (tokenPosition < result.Length && !result[tokenPosition].Equals(tokenStopSymbol))
                         {
                             builder.Append(result[tokenPosition]);
                             tokenPosition++;
@@ -295,9 +297,8 @@ namespace Odnoklassniki
                         if (type == SDK.OAuthRequestType.OAuthTypeAuth)
                         {
                             builder.Clear();
-                            //plus length of (refresh_token":")
-                            tokenPosition = result.IndexOf(ParameterNameRefreshToken) + 16;
-                            while (tokenPosition < result.Length && !result[tokenPosition].Equals('\"'))
+                            tokenPosition = result.IndexOf(SDK.ParameterNameRefreshToken) + SDK.ParameterNameRefreshToken.Length + tokenNameValueSeparator.Length;
+                            while (tokenPosition < result.Length && !result[tokenPosition].Equals(tokenStopSymbol))
                             {
                                 builder.Append(result[tokenPosition]);
                                 tokenPosition++;
@@ -356,7 +357,7 @@ namespace Odnoklassniki
                 string resultText = GetUtf8TextFromWebResponse(response);
                 CallbackStruct callback = this._callbacks.SafeGet(request);
                 this._callbacks.SafeRemove(request);
-                if (resultText.IndexOf("\"error_code\":102") != -1)
+                if (resultText.IndexOf(SDK.ResponsePartErrorCode + ":" + SDK.ErrorCodeSessionExpired) != -1)
                 {
                     if (callback.OnError != null)
                     {
@@ -364,7 +365,7 @@ namespace Odnoklassniki
                         return;
                     }
                 }
-                else if (resultText.IndexOf("\"error_code\"") != -1)
+                else if (resultText.IndexOf(SDK.ResponsePartErrorCode) != -1)
                 {
                     if (callback.OnError != null)
                     {
@@ -410,7 +411,7 @@ namespace Odnoklassniki
          * @param method method name
          * @param parameters dictionary "parameter_name":"parameter_value"
          */
-        private string CalcSignature(string method, Dictionary<string, string> parameters)
+        private string CalcSignature(string method, Dictionary<string, string> parameters = null)
         {
             Dictionary<string, string> parametersLocal = parameters == null ? new Dictionary<string, string>() : new Dictionary<string, string>(parameters);
 
