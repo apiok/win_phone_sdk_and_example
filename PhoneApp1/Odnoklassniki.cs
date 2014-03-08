@@ -17,10 +17,18 @@ namespace Odnoklassniki
 // ReSharper disable once InconsistentNaming
     class SDK
     {
-
+        /// <summary>
+        /// Parameters name prefix that will be used to store parameters in application isolated storage.
+        /// </summary>
         [DefaultValue("OK_SDK_")]
         public static string SettingsPrefix{get; set;}
-
+        /*
+         * Error strings.
+         * If you see these errors, see documentation here http://apiok.ru/ .
+         */
+        public const string ErrorSessionExpired = "SESSION_EXPIRED";
+        public const string ErrorNoTokenSentByServer = "NO_ACCESS_TOKEN_SENT_BY_SERVER";
+        public const string ErrorBadApiRequest = "BAD_API_REQUEST";
         /*
          * Uris, uri templates, data templates
          */
@@ -29,20 +37,13 @@ namespace Odnoklassniki
         private const string UriTemplateAuth = "http://www.odnoklassniki.ru/oauth/authorize?client_id={0}&scope={1}&response_type=code&redirect_uri={2}&layout=m";
         private const string DataTemplateAuthTokenRequest = "code={0}&redirect_uri={1}&grant_type=authorization_code&client_id={2}&client_secret={3}";
         private const string DataTemplateAuthTokenUpdateRequest = "refresh_token={0}&grant_type=refresh_token&client_id={1}&client_secret={2}";
-        /*
-         * End uris, uri templates, data templates
-         */
-        public const string ErrorSessionExpired = "SESSION_EXPIRED";
-        public const string ErrorNoTokenSentByServer = "NO_ACCESS_TOKEN_SENT_BY_SERVER";
-        /*
-         * if you see this text, read about errors here http://apiok.ru/wiki/pages/viewpage.action?pageId=77824003
-         */
-        public const string ErrorBadApiRequest = "BAD_API_REQUEST";
+
         private const string SdkException = "Odnoklassniki sdk exception. Please, check your app info, request correctness and internet connection. If problem persists, contact SDK developers with error and your actions description.";
         private const string ParameterNameAccessToken = "access_token";
         private const string ParameterNameRefreshToken = "refresh_token";
         private const string ResponsePartErrorCode = "\"error_code\"";
         private const int ErrorCodeSessionExpired = 102;
+
         private readonly string _appId;
         private readonly string _appPublicKey;
         private readonly string _appSecretKey;
@@ -66,14 +67,15 @@ namespace Odnoklassniki
             this._permissions = permissions;
         }
 
-        /**
-         * Authorize the application with permissions.
-         * Calls onSuccess after correct response, onError otherwise(in callbackContext thread).
-         * @param browser - browser element will be used for OAuth2 authorisation.
-         * @param callbackContext - PhoneApplicationPage in context of witch RequestCallback would be called. Used to make working with UI components from callbacks simplier.
-         * @param onSuccess - this function will be called after success authorisation(in callbackContext thread)
-         * @param onError - this function will be called after unsuccess authorisation(in callbackContext thread)
-         */
+        /// <summary>
+        /// Authorize the application with permissions.
+        /// Calls onSuccess after correct response, onError otherwise(in callbackContext thread).
+        /// </summary>
+        /// <param name="browser">browser element will be used for OAuth2 authorisation.</param>
+        /// <param name="callbackContext">PhoneApplicationPage in context of witch RequestCallback would be called. Used to make working with UI components from callbacks simplier.</param>
+        /// <param name="onSuccess">this function will be called after success authorisation(in callbackContext thread)</param>
+        /// <param name="onError">this function will be called after unsuccess authorisation(in callbackContext thread)</param>
+        /// <param name="saveSession">if true, saves refresh ann access tokens to application islolated storage</param>
         public void Authorize(WebBrowser browser, PhoneApplicationPage callbackContext, Action onSuccess, Action<Exception> onError, bool saveSession = true)
         {
             this._authCallback.OnSuccess = onSuccess;
@@ -85,15 +87,15 @@ namespace Odnoklassniki
             browser.Navigate(uri);
         }
 
-        /*
-         * Prepairs and sends API request.
-         * Calls onSuccess after correct response, onError otherwise(in callbackContext thread).
-         * @param method methodname
-         * @param parameters dictionary "parameter_name":"parameter_value"
-         * @param callbackContext - PhoneApplicationPage in context of witch RequestCallback would be called. Used to make working with UI components from callbacks simplier.
-         * @param onSuccess - this function will be called after success authorisation(in callbackContext thread)
-         * @param onError - this function will be called after unsuccess authorisation(in callbackContext thread)
-         */
+        /// <summary>
+        /// Prepairs and sends API request.
+        /// Calls onSuccess after correct response, onError otherwise(in callbackContext thread).
+        /// </summary>
+        /// <param name="method">methodname</param>
+        /// <param name="parameters">dictionary "parameter_name":"parameter_value"</param>
+        /// <param name="callbackContext">PhoneApplicationPage in context of witch RequestCallback would be called. Used to make working with UI components from callbacks simplier.</param>
+        /// <param name="onSuccess">this function will be called after success authorisation(in callbackContext thread)</param>
+        /// <param name="onError">this function will be called after unsuccess authorisation(in callbackContext thread)</param>
         public void SendRequest(string method, Dictionary<string, string> parameters, PhoneApplicationPage callbackContext, Action<string> onSuccess, Action<Exception> onError)
         {
             try
@@ -110,7 +112,7 @@ namespace Odnoklassniki
                 }
                 // removing last & added with cycle
                 builder.Remove(builder.Length - 1, 1);
-                HttpWebRequest request = HttpWebRequest.CreateHttp(builder.ToString());
+                HttpWebRequest request = WebRequest.CreateHttp(builder.ToString());
                 CallbackStruct callbackStruct;
                 callbackStruct.OnSuccess = onSuccess;
                 callbackStruct.CallbackContext = callbackContext;
@@ -127,13 +129,14 @@ namespace Odnoklassniki
             }
         }
 
-        /**
-         * Tries to update access_token with refresh_token.
-         * Calls onSuccess after correct response, onError otherwise(in callbackContext thread).
-         * @param callbackContext - PhoneApplicationPage in context of witch RequestCallback would be called. Used to make working with UI components from callbacks simplier.
-         * @param onSuccess - this function will be called after success authorisation(in callbackContext thread)
-         * @param onError - this function will be called after unsuccess authorisation(in callbackContext thread)
-         */
+        /// <summary>
+        /// Tries to update access_token with refresh_token.
+        /// Calls onSuccess after correct response, onError otherwise(in callbackContext thread).
+        /// </summary>
+        /// <param name="callbackContext">PhoneApplicationPage in context of witch RequestCallback would be called. Used to make working with UI components from callbacks simplier.</param>
+        /// <param name="onSuccess">this function will be called after success authorisation(in callbackContext thread)</param>
+        /// <param name="onError">this function will be called after unsuccess authorisation(in callbackContext thread)</param>
+        /// <param name="saveSession">if true, saves new access token to application isolated storage</param>
         public void UpdateToken(PhoneApplicationPage callbackContext, Action onSuccess, Action<Exception> onError, bool saveSession = true)
         {
             this._updateCallback.CallbackContext = callbackContext;
@@ -153,9 +156,9 @@ namespace Odnoklassniki
             }
         }
  
-        /**
-         * Saves acces_token and refresh_token to application isolated storage.
-         */
+        /// <summary>
+        /// Saves acces_token and refresh_token to application isolated storage.
+        /// </summary>
         public void SaveSession()
         {
             try
@@ -171,11 +174,11 @@ namespace Odnoklassniki
             }
         }
 
-        /**
-         * Tries to load acces_token and refresh_token from application isolated storage.
-         * This function doesn't guarantee, that tokens are correct.
-         * @return true if access_tokent and refresh_token loaded from isolated storage false otherwise
-         */
+        /// <summary>
+        /// Tries to load acces_token and refresh_token from application isolated storage.
+        /// This function doesn't guarantee, that tokens are correct.
+        /// <returns>Returns true if access_tokent and refresh_token loaded from isolated storage false otherwise.</returns>
+        /// </summary>
         public bool TryLoadSession()
         {
             IsolatedStorageSettings appSettings = IsolatedStorageSettings.ApplicationSettings;
@@ -188,10 +191,10 @@ namespace Odnoklassniki
             return false;
         }
 
-        /*
-         * Removes access_token and refresh_token from appliction isolated storage and object.
-         * You have to get new tokens usin Authorise method after calling this method.
-         */
+        /// <summary>
+        /// Removes access_token and refresh_token from appliction isolated storage and object.
+        /// You have to get new tokens usin Authorise method after calling this method.
+        /// </summary>
         public void ResetSession()
         {
             this._accessToken = null;
@@ -230,7 +233,7 @@ namespace Odnoklassniki
             try
             {
                 Uri myUri = new Uri(UriTokenRequest);
-                HttpWebRequest request = (HttpWebRequest)HttpWebRequest.Create(myUri);
+                HttpWebRequest request = (HttpWebRequest)WebRequest.Create(myUri);
                 request.Method = "POST";
                 request.ContentType = "application/x-www-form-urlencoded";
                 request.BeginGetRequestStream(arg => BeginGetOAuthResponse(arg, type), request);
@@ -258,6 +261,8 @@ namespace Odnoklassniki
                 {
                     parameters = String.Format(DataTemplateAuthTokenUpdateRequest, this._refreshToken, this._appId, this._appSecretKey);
                 }
+                // ReSharper disable once AssignNullToNotNullAttribute
+                // for now, it's correct to throw ArgumentNullException, if it'll be
                 byte[] byteArray = Encoding.UTF8.GetBytes(parameters);
 
                 postStream.Write(byteArray, 0, byteArray.Length);
@@ -342,10 +347,10 @@ namespace Odnoklassniki
 
         #endregion
 
-        /**
-         * Callback for SendRequest function.
-         * Checks for errors and calls callback for each API request.
-         */
+        /// <summary>
+        /// Callback for SendRequest function.
+        /// Checks for errors and calls callback for each API request.
+        /// </summary>
         private void RequestCallback(IAsyncResult result)
         {
             HttpWebRequest request = result.AsyncState as HttpWebRequest;
@@ -406,11 +411,12 @@ namespace Odnoklassniki
             return sb.ToString();
         }
 
-        /**
-         * Calculates signature for API request with given method and parameters.
-         * @param method method name
-         * @param parameters dictionary "parameter_name":"parameter_value"
-         */
+        /// <summary>
+        /// Calculates signature for API request with given method and parameters.
+        /// </summary>
+        /// <param name="method">method name</param>
+        /// <param name="parameters">dictionary "parameter_name":"parameter_value"</param>
+        /// <returns>Returns signature.</returns>
         private string CalcSignature(string method, Dictionary<string, string> parameters = null)
         {
             Dictionary<string, string> parametersLocal = parameters == null ? new Dictionary<string, string>() : new Dictionary<string, string>(parameters);
