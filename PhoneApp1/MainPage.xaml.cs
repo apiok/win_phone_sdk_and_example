@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Net;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using Microsoft.Phone.Controls;
 using Newtonsoft.Json.Linq;
 using Odnoklassniki;
@@ -88,6 +90,48 @@ namespace PhoneApp1
             if (e.Message != SDK.ErrorSessionExpired) return;
             System.Diagnostics.Debug.WriteLine("Session expired error caught. Trying to update session.");
             this._sdk.UpdateToken(this, AuthCallback, null);
+        }
+    }
+
+    class Utils
+    {
+        public static void DownloadImageAsync(Uri imageAbsoluteUri, PhoneApplicationPage context, Action<BitmapImage> callbackOnSuccess, Action<Exception> callbackOnError)
+        {
+            try
+            {
+                WebClient wc = new WebClient();
+                wc.OpenReadCompleted += (s, e) =>
+                {
+                    if (e.Error == null && !e.Cancelled)
+                    {
+                        try
+                        {
+                            BitmapImage image = new BitmapImage();
+                            image.SetSource(e.Result);
+                            context.Dispatcher.BeginInvoke(() => callbackOnSuccess.Invoke(image));
+                        }
+                        catch (Exception ex)
+                        {
+                            if (callbackOnError != null)
+                            {
+                                callbackOnError.Invoke(ex);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Error downloading image");
+                    }
+                };
+                wc.OpenReadAsync(imageAbsoluteUri, wc);
+            }
+            catch (Exception e)
+            {
+                if (callbackOnError != null)
+                {
+                    callbackOnError.Invoke(e);
+                }
+            }
         }
     }
 }
